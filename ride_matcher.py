@@ -1,30 +1,41 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-from  watson_developer_cloud  import ConversationV1
+from  watson_developer_cloud import ConversationV1
+import json
 
 conversation = ConversationV1(
     username='b6b2699f-0985-41a3-9c2b-3690df8f125f',
     password='nhawoSB1unoT',
     version='2016-09-20')
 
+workspace_id = '5eead463-b709-45e5-8c08-bf3a517e9321'
 
-workspace_id = 'a244c11b-2418-4464-8ca7-fb467e967a3d'
+content_dict = dict()
 
 app = Flask(__name__)
 api = Api(app)
 
 
-
-
-
 class ChatInterface(Resource):
-
     def post(self):
         json_content = request.json
+        user_id = json_content["user_id"]
+        text = json_content["input"]
+        if user_id in content_dict:
+            response = conversation.message(workspace_id=workspace_id, message_input={'text': text},
+                                            context=content_dict[user_id])
+        else:
+            response = conversation.message(workspace_id=workspace_id, message_input={'text': text})
+        print(json.dumps(response, indent=2))
+        context = response["context"]
+        content_dict[user_id] = context
+
+        answer_text = response["output"]["text"]
+        return jsonify(responds=answer_text)
+
+
 
 api.add_resource(ChatInterface, '/chat')
-
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True, threaded=True)
