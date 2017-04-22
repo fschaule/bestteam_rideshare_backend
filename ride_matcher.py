@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-from  watson_developer_cloud import ConversationV1
+from watson_developer_cloud import ConversationV1
 import json
 import requests
 
@@ -20,6 +20,7 @@ api = Api(app)
 class ChatInterface(Resource):
     def post(self):
         json_content = request.json
+        print("request :" + str(json))
         user_id = json_content["user_id"]
         if "cancel" in json_content:
             if json_content["cancel"]:
@@ -30,7 +31,6 @@ class ChatInterface(Resource):
                                             context=content_dict[user_id])
         else:
             response = conversation.message(workspace_id=workspace_id, message_input={'text': text})
-        print(json.dumps(response, indent=2))
         context = response["context"]
         content_dict[user_id] = context
 
