@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="9c816f50-858a-4ca3-a462-0c9919c22436" name="backend_rideshare" url="http://46.101.236.70">
+        <fileTransfer host="46.101.236.70" port="22" privateKey="$USER_HOME$/.ssh/id_rsa" accessType="SFTP" username="root" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
