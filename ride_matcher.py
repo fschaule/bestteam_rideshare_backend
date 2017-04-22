@@ -35,10 +35,19 @@ class ChatInterface(Resource):
         content_dict[user_id] = context
 
         answer_text = response["output"]["text"]
-        #r = requests.post("http://localhost:8080/ride_location")
-
-
-        return jsonify(responds=answer_text)
+        if context["complete"]:
+            start_location = context["startlocation"]
+            end_location = context["targetlocation"]
+            date = context["date"]
+            time = context["time"]
+            r = requests.post("http://localhost:8080/ride_location", json={"user_id": user_id, "start": start_location,
+                                                                           "end": end_location, 'date': str(date) + " "
+                                                                            + str(time)}, headers={"Content-Type": "application/json"})
+            if r:
+                print("result matching: " + str(r.json()))
+                return r.json()
+        else:
+            return jsonify(responds=answer_text)
 
 
 

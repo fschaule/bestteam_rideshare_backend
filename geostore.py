@@ -1,10 +1,11 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from flask_pymongo import PyMongo
 from pymongo import MongoClient, GEO2D
 from geopy.geocoders import Nominatim
 from geopy.distance import vincenty
 from bson.son import SON
+
 
 app = Flask(__name__)
 api = Api(app)
@@ -18,10 +19,9 @@ class GeoDB():
     distance = 20  # 20 km distance
 
     @staticmethod
-    def insert(user_id, request_status, start_location, end_location):
+    def insert(user_id, start_location, end_location, date):
         result = db.places.insert_one({"loc": [start_location.latitude, start_location.longitude], "user_id": user_id,
-                                       "ride_status": request_status,
-                                       "loc_end": [end_location.latitude, end_location.longitude]})
+                                       "loc_end": [end_location.latitude, end_location.longitude], "date": date})
         print("inserted in db: " + str(result))
 
     @staticmethod
@@ -32,7 +32,7 @@ class GeoDB():
         return result
 
     @staticmethod
-    def findRides(user_id, request_status, start_location, end_location):
+    def findRides(user_id, start_location, end_location, date):
         possible_set = GeoDB.match(start_location.latitude, start_location.longitude)
         possible_result = []
         for item in possible_set:
@@ -42,34 +42,40 @@ class GeoDB():
                 if vincenty(ride_end_location, (end_location.latitude, end_location.longitude)).kilometers < GeoDB.distance:
                     possible_result.append(item)
                     print("result: " + str(item))
+        if possible_result:
+            res = possible_result[0]
+            return jsonify(date=res["date"])
+        else:
+            return
 
 
 
 
-class DataInferace(Resource):
+class DataInterface(Resource):
+
     def post(self):
         json_content = request.json
-
-        request_status = json_content["request_status"]
+        print(json_content)
         user_id = json_content["user_id"]
-        start_location = geolocator.geocode(json_content["start"]["location"])
-        end_location = geolocator.geocode(json_content["end"]["location"])
+        date = json_content["date"]
+        start_location = geolocator.geocode(json_content["start"])
+        end_location = geolocator.geocode(json_content["end"])
         #ride_date =  json_content["date"]
-        print("start lat " + str(start_location.latitude) + "lon " + str(start_location.longitude))
-        print("end lat " + str(end_location.latitude) + "lon " + str(end_location.longitude))
-        GeoDB.insert(user_id, request_status, start_location, end_location)
-
-        if (request_status == "request"):
-            GeoDB.findRides(user_id, request_status, start_location, end_location)
+      #  print("start lat " + str(start_location.latitude) + "lon " + str(start_location.longitude))
+       # print("end lat " + sstr(end_location.latitude) + "lon " + str(end_location.longitude))
+        GeoDB.insert(user_id, start_location, end_location, date)
 
 
-class Test(Resource):
-    def get(self):
-        return "test"
+        matching_result = GeoDB.findRides(user_id, start_location, end_location, date)
+        if matching_result:
+            print
+            return matching_result
+
+        return
 
 
-api.add_resource(DataInferace, '/ride_location')
-api.add_resource(Test, '/test')
+
+api.add_resource(DataInterface, '/ride_location')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
