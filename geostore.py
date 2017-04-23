@@ -5,7 +5,6 @@ from geopy.geocoders import Nominatim
 from geopy.distance import vincenty
 from bson.son import SON
 
-
 app = Flask(__name__)
 api = Api(app)
 geolocator = Nominatim()
@@ -38,36 +37,41 @@ class GeoDB():
             print("possible result: " + str(item))
             if item["user_id"] != user_id:
                 ride_end_location = (item["loc_end"][0], item["loc_end"][1])
-                if vincenty(ride_end_location, (end_location.latitude, end_location.longitude)).kilometers < GeoDB.distance:
+                if vincenty(ride_end_location,
+                            (end_location.latitude, end_location.longitude)).kilometers < GeoDB.distance:
                     possible_result.append(item)
                     print("result: " + str(item))
         if possible_result:
             res = possible_result[0]
-            return jsonify(date=res["date"], user_id=res["user_id"])
+            return jsonify(
+                responds=["Your ride with Lisa is leaving at " + str(res["date"] + ". You want to chat with her?")])
         else:
-            return
-
-
+            return jsonify(
+                responds=["There are no rides at the moment, but I'll keep you posted"])
 
 
 class DataInterface(Resource):
-
     def post(self):
         json_content = request.json
         print(json_content)
         user_id = json_content["user_id"]
         date = json_content["date"]
-        start_location = geolocator.geocode(json_content["start"])
-        end_location = geolocator.geocode(json_content["end"])
-        GeoDB.insert(user_id, start_location, end_location, date)
+        if len(json_content["start"]) > 1:
+            start_location = geolocator.geocode(json_content["start"]["value"])
+        else:
+            start_location = geolocator.geocode(json_content["start"])
 
+        if len(json_content["end"]) > 1:
+            end_location = geolocator.geocode(json_content["end"]["value"])
+        else:
+            end_location = geolocator.geocode(json_content["end"])
+
+        GeoDB.insert(user_id, start_location, end_location, date)
 
         matching_result = GeoDB.findRides(user_id, start_location, end_location, date)
         if matching_result:
             return matching_result
-
         return
-
 
 
 api.add_resource(DataInterface, '/ride_location')
